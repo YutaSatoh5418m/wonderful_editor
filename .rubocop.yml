@@ -10,3 +10,12 @@ inherit_from:
 AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
+  # Exclude:
+  #   - db/migrate/**/*
+  # Include:
+  #   - app/
+  #   - config/
+  #   - spec/
+  #   - lib/
+  #   - test/
+  #   - vendor/ 
