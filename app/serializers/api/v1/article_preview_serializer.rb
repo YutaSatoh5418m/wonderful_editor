@@ -4,4 +4,6 @@ class Api::V1::ArticlePreviewSerializer < ActiveModel::Serializer
   def thumbnail_url
     object.thumbnail&.url
   end
+
+  json.array! @articles, partial: 'api/v1/articles/article', as: :article
 end
