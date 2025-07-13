@@ -11,8 +11,8 @@
 #
 FactoryBot.define do
   factory :article do
-    title { "テスト記事" }
-    body { "テスト本文" }
-    association :user
+    title { Faker::Lorem.word }
+    body { Faker::Lorem.sentence }
+    user
   end
 end
