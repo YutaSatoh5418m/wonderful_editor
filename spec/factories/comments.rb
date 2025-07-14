@@ -11,7 +11,7 @@
 #
 FactoryBot.define do
   factory :comment do
-    body { "テストコメント" }
+    body { Faker::Lorem.paragraph(sentence_count: 1) }
     association :user
     association :article
   end

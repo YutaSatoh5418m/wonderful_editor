@@ -19,4 +19,23 @@ RSpec.describe "Api::V1::Articles", type: :request do
       expect(res[0]["user"].keys).to eq ["id", "name", "email"]
     end
   end
+
+  describe "GET /articles/:id" do
+    subject { get(api_v1_article_path(article)) }
+
+    let!(:article) { create(:article) }
+
+    it "記事の詳細が取得できる" do
+      subject
+      res = JSON.parse(response.body)
+
+      expect(response).to have_http_status(:ok)
+      expect(res["id"]).to eq article.id
+      expect(res["title"]).to eq article.title
+      expect(res["body"]).to eq article.body
+      expect(res["user"]["id"]).to eq article.user.id
+      expect(res["user"]["name"]).to eq article.user.name
+      expect(res["user"]["email"]).to eq article.user.email
+    end
+  end
 end
