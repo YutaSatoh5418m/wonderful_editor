@@ -33,5 +33,9 @@ FactoryBot.define do
     sequence(:email) {|n| "test#{n}@example.com" }
     password { "password" }
     password_confirmation { "password" }
+    confirmed_at { Time.current }
   end
+
+  factory :dummy_user, parent: :user do
+    email { "dummy@example.com" }
 end
