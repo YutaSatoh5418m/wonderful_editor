@@ -21,21 +21,86 @@ RSpec.describe "Api::V1::Articles", type: :request do
   end
 
   describe "GET /articles/:id" do
-    subject { get(api_v1_article_path(article)) }
+    subject { get(api_v1_article_path(article_id)) }
 
-    let!(:article) { create(:article) }
+    context "指定した id の記事が存在する場合" do
+      let(:article) { create(:article) }
+      let(:article_id) { article.id }
 
-    it "記事の詳細が取得できる" do
-      subject
-      res = JSON.parse(response.body)
+      it "任意の記事の値が取得できる" do
+        subject
+        res = JSON.parse(response.body)
+    
+        expect(response).to have_http_status(:ok)
+        expect(res["id"]).to eq article.id
+        expect(res["title"]).to eq article.title
+        expect(res["body"]).to eq article.body
+        expect(res["updated_at"]).to be_present
+        expect(res["user"]["id"]).to eq article.user.id
+        expect(res["user"].keys).to eq ["id", "name", "email"] 
+      end
+    end
 
-      expect(response).to have_http_status(:ok)
-      expect(res["id"]).to eq article.id
-      expect(res["title"]).to eq article.title
-      expect(res["body"]).to eq article.body
-      expect(res["user"]["id"]).to eq article.user.id
-      expect(res["user"]["name"]).to eq article.user.name
-      expect(res["user"]["email"]).to eq article.user.email
+    context "指定した id の記事が存在しない場合" do
+      let(:article_id) { 10000 }
+
+      it "記事が見つからない" do
+        expect { subject }.to raise_error ActiveRecord::RecordNotFound
+      end
+    end
+  end
+
+  describe "POST /articles" do
+    subject { post(api_v1_articles_path, params: { article: { title: "title", body: "body" } }) }
+
+    context "有効な属性値で有効であること" do
+      it "記事が作成できる" do
+        expect { subject }.to change(Article, :count).by(1)
+      end
+    end
+
+    context "無効な属性値で有効であること" do
+      it "記事が作成できない" do
+        expect { subject }.to_not change(Article, :count)
+      end
+    end
+  end
+
+  describe "PUT /articles/:id" do
+    subject { put(api_v1_article_path(article_id), params: { article: { title: "title", body: "body" } }) }
+
+    let(:article) { create(:article) }
+    let(:article_id) { article.id }
+
+    context "有効な属性値で有効であること" do
+      it "記事が更新できる" do
+        expect { subject }.to change(article, :title).to("title")
+      end
+    end
+
+    context "無効な属性値で有効であること" do
+      it "記事が更新できない" do
+        expect { subject }.to_not change(article, :title)
+      end
+    end
+  end
+
+  describe "DELETE /articles/:id" do
+    subject { delete(api_v1_article_path(article_id)) }
+
+    let(:article) { create(:article) }
+    let(:article_id) { article.id }
+
+    context "有効な属性値で有効であること" do
+      it "記事が削除できる" do
+        expect { subject }.to change(Article, :count).by(-1)
+      end
+    end
+
+    context "無効な属性値で有効であること" do
+      it "記事が削除できない" do
+        expect { subject }.to_not change(Article, :count)
+      end
     end
   end
 end
