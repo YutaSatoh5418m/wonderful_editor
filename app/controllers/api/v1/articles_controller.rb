@@ -1,5 +1,6 @@
 module Api::V1
-  class ArticlesController < BaseApiController # base_api_controller を継承
+  # base_api_controller を継承
+  class ArticlesController < BaseApiController
     def index
       articles = Article.order(updated_at: :desc)
       render json: articles, each_serializer: Api::V1::ArticlePreviewSerializer
@@ -30,14 +31,14 @@ module Api::V1
 
     def destroy
       article = Article.find(params[:id])
-      article.destroy
+      article.destroy!
       render json: { message: "Article deleted successfully" }, status: :ok
     end
 
     private
 
-    def article_params
-      params.require(:article).permit(:title, :content)
-    end
+      def article_params
+        params.require(:article).permit(:title, :content)
+      end
   end
 end
