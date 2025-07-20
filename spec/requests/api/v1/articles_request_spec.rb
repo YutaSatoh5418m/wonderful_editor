@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Api::V1::Articles", type: :request do
-  describe "GET /api/articles" do
+  describe "GET /articles" do
     subject { get(api_v1_articles_path) }
 
     let!(:article1) { create(:article, updated_at: 1.days.ago) }
@@ -10,7 +10,7 @@ RSpec.describe "Api::V1::Articles", type: :request do
 
     it "記事の一覧が取得できる" do
       subject
-      res = response.parsed_body
+      res = JSON.parse(response.body)
 
       expect(response).to have_http_status(:ok)
       expect(res.length).to eq 3
@@ -20,7 +20,7 @@ RSpec.describe "Api::V1::Articles", type: :request do
     end
   end
 
-  describe "GET /api/articles/:id" do
+  describe "GET /articles/:id" do
     subject { get(api_v1_article_path(article_id)) }
 
     context "指定した id の記事が存在する場合" do
@@ -29,7 +29,7 @@ RSpec.describe "Api::V1::Articles", type: :request do
 
       it "任意の記事の値が取得できる" do
         subject
-        res = response.parsed_body
+        res = JSON.parse(response.body)
 
         expect(response).to have_http_status(:ok)
         expect(res["id"]).to eq article.id
@@ -50,64 +50,74 @@ RSpec.describe "Api::V1::Articles", type: :request do
     end
   end
 
-  describe "POST /api/articles" do
-    let(:user) { create(:user) } # FactoryBot等でテスト用ユーザーを用意
+  describe "POST /articles" do
+    subject { post(api_v1_articles_path, params: params) }
 
-    before do
-      allow_any_instance_of(Api::V1::BaseApiController).
-        to receive(:current_user).
-             and_return(user)
+    let(:params) { { article: attributes_for(:article) } }
+    let(:current_user) { create(:user) }
+
+    # stub
+    before { allow_any_instance_of(Api::V1::BaseApiController).to receive(:current_user).and_return(current_user) }
+
+    it "記事のレコードが作成できる" do
+      expect { subject }.to change { Article.where(user_id: current_user.id).count }.by(1)
+      res = JSON.parse(response.body)
+      expect(res["title"]).to eq params[:article][:title]
+      expect(res["body"]).to eq params[:article][:body]
+      expect(response).to have_http_status(:ok)
     end
+  end
 
-    context "有効な属性値で有効であること" do
-      it "記事を作成できること" do
-        post "/api/articles", params: { article: { title: "タイトル", body: "本文" } }
+  describe "PATCH /api/v1/articles/:id" do
+    subject { patch(api_v1_article_path(article.id), params: params) }
+
+    let(:params) { { article: attributes_for(:article) } }
+    let(:current_user) { create(:user) }
+    before { allow_any_instance_of(Api::V1::BaseApiController).to receive(:current_user).and_return(current_user) }
+
+    context "自分が所持している記事のレコードを更新しようとするとき" do
+      let(:article) { create(:article, user: current_user) }
+
+      it "記事を更新できる" do
+        expect { subject }.to change { article.reload.title }.from(article.title).to(params[:article][:title]) &
+                              change { article.reload.body }.from(article.body).to(params[:article][:body])
         expect(response).to have_http_status(:ok)
-        # ここで current_user.id が紐づいた記事が作られてるか検証
       end
     end
 
-    context "無効な属性値で有効であること" do
-      it "記事が作成できない" do
-        expect { subject }.not_to change { Article.count }
-      end
-    end
-  end
+    context "自分が所持していない記事のレコードを更新しようとするとき" do
+      let(:other_user) { create(:user) }
+      let!(:article) { create(:article, user: other_user) }
 
-  describe "PUT /api/articles/:id" do
-    subject { put(api_v1_article_path(article_id), params: { article: { title: "title", body: "body" } }) }
-
-    let(:article) { create(:article) }
-    let(:article_id) { article.id }
-
-    context "有効な属性値で有効であること" do
-      it "記事が更新できる" do
-        expect { subject }.to change { article.title }.to("title")
-      end
-    end
-
-    context "無効な属性値で有効であること" do
-      it "記事が更新できない" do
-        expect { subject }.not_to change { article.title }
+      it "更新できない" do
+        expect { subject }.to raise_error(ActiveRecord::RecordNotFound)
       end
     end
   end
 
-  describe "DELETE /api/articles/:id" do
+  describe "DELETE /articles/:id" do
     subject { delete(api_v1_article_path(article_id)) }
 
-    let(:article) { create(:article) }
+    # devise_token_auth の導入が完了後に削除
+    let(:current_user) { create(:user) }
     let(:article_id) { article.id }
+    before { allow_any_instance_of(Api::V1::BaseApiController).to receive(:current_user).and_return(current_user) }
 
-    context "有効な属性値で有効であること" do
-      it "記事が削除できる" do
+    context "自分の記事を削除しようとするとき" do
+      let!(:article) { create(:article, user: current_user) }
+
+      it "記事を削除できる" do
         expect { subject }.to change { Article.count }.by(-1)
+        expect(response).to have_http_status(:no_content)
       end
     end
 
-    context "無効な属性値で有効であること" do
-      it "記事が削除できない" do
-        expect { subject }.not_to change { Article.count }
+    context "他人が所持している記事のレコードを削除しようとするとき" do
+      let(:other_user) { create(:user) }
+      let!(:article) { create(:article, user: other_user) }
+
+      it "記事を削除できない" do
+        expect { subject }.to raise_error(ActiveRecord::RecordNotFound) & change { Article.count }.by(0)
       end
     end
   end

@@ -12,27 +12,19 @@ module Api::V1
     end
 
     def create
-      article = Article.new(article_params)
-      if article.save
-        render json: article, serializer: Api::V1::ArticleSerializer
-      else
-        render json: { errors: article.errors.full_messages }, status: :unprocessable_entity
-      end
+      article = current_user.articles.create!(article_params)
+      render json: article, serializer: Api::V1::ArticleSerializer
     end
 
     def update
-      article = Article.find(params[:id])
-      if article.update(article_params)
-        render json: article, serializer: Api::V1::ArticleSerializer
-      else
-        render json: { errors: article.errors.full_messages }, status: :unprocessable_entity
-      end
+      article = current_user.articles.find(params[:id])
+      article.update!(article_params)
+      render json: article, serializer: Api::V1::ArticleSerializer
     end
 
     def destroy
-      article = Article.find(params[:id])
+      article = current_user.articles.find(params[:id])
       article.destroy!
-      render json: { message: "Article deleted successfully" }, status: :ok
     end
 
     private
