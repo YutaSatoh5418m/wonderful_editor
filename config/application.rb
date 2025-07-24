@@ -49,9 +49,22 @@ module WonderfulEditor
 
     config.api_only = true
 
+    # APIモードで必要なミドルウェアを追加
     config.middleware.use Rack::MethodOverride
     config.middleware.use ActionDispatch::Cookies
-    config.middleware.use ActionDispatch::Session::CookieStore
+    config.middleware.use ActionDispatch::Session::CookieStore, key: '_your_app_session', expire_after: 14.days
     config.middleware.use ActionDispatch::Flash
+    
+    # CORSの設定
+    # config.middleware.insert_before 0, Rack::Cors do
+    #   allow do
+    #     origins '*'
+    #     resource '*',
+    #              headers: :any,
+    #              methods: [:get, :post, :put, :patch, :delete, :options, :head],
+    #              expose: ['access-token', 'expiry', 'token-type', 'uid', 'client'],
+    #              max_age: 0
+    #   end
+    # end
   end
 end
