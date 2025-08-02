@@ -30,6 +30,7 @@
 #
 FactoryBot.define do
   factory :user do
+    name { Faker::Lorem.characters(number: Random.new.rand(1..30)) }
     sequence(:email) {|n| "test#{n}@example.com" }
     password { "password" }
     password_confirmation { "password" }
