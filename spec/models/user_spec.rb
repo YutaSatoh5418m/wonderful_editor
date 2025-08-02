@@ -31,20 +31,37 @@
 require "rails_helper"
 
 RSpec.describe User, type: :model do
-  describe "バリデーション" do
-    it "有効な属性値で有効であること" do
-      user = build(:user)
+
+  context "必要な情報が揃っている場合" do
+    let(:user) { build(:user) }
+
+    it "ユーザー登録できる" do
       expect(user).to be_valid
     end
+  end
 
-    it "emailが必須であること" do
-      user = build(:user, email: nil)
+
+ 
+  context "名前のみ入力している場合" do
+    let(:user) { build(:user, email: nil, password: nil) }
+
+    it "エラーが発生する" do
       expect(user).not_to be_valid
     end
+  end
 
-    it "emailの一意性" do
-      create(:user, email: "test@example.com")
-      user = build(:user, email: "test@example.com")
+  context "email がない場合" do
+    let(:user) { build(:user, email: nil) }
+
+    it "エラーが発生する" do
+      expect(user).not_to be_valid
+    end
+  end
+  
+  context "password がない場合" do
+    let(:user) { build(:user, password: nil) }
+
+    it "エラーが発生する" do
       expect(user).not_to be_valid
     end
   end
